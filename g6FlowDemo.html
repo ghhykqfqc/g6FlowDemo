@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>G6 Flow Demo</title>
+  </head>
+  <body>
+    <div id="container"></div>
+
+    <script src="./g6.min.js"></script>
+    <script src="./jquery-3.7.1.min.js"></script>
+
+    <script>
+      const width = $('#container').scrollWidth;
+      const height = $('#container').scrollHeight || 500;
+
+      /** ====== data preparation ======= */
+      // the first layer nodes
+      const baseData = {
+        nodes: [
+          { id: "intention1", time: "2023/12/20", title: "任务组1ID", expandRange: [0, 1], show: false, startPosition: 0, endPosition: 0 },
+          { id: "intention2", time: "2023/12/21", title: "任务组2ID", expandRange: [2, 3], show: false, startPosition: 0, endPosition: 0 },
+          { id: "intention3", time: "2023/12/22", title: "任务组3ID", expandRange: [4, 5], show: false, startPosition: 0, endPosition: 0 },
+          { id: "intention4", time: "2023/12/23", title: "任务组4ID", expandRange: [6, 8], show: false, startPosition: 0, endPosition: 0 },
+        ],
+        edges: [
+          { id: "edge1", source: "intention1", target: "intention2" },
+          { id: "edge2", source: "intention1", target: "intention3" },
+          { id: "edge3", source: "intention2", target: "intention4" },
+          { id: "edge4", source: "intention3", target: "intention4" },
+        ]
+      };
+      baseData.nodes.forEach(node => {
+        node.type = 'customNode';
+      });
+      // layout for the first layer nodes
+      const gridLayout = new G6.Layout['grid']({
+        rows: 2,
+        width,
+        sortBy: 'id'
+      });
+      gridLayout.init(baseData);
+      gridLayout.execute()
+
+      // the second layer nodes
+      const rangeData = {
+        nodes: [
+          { id: "0", parent: "0", label: "批任务0" },
+          { id: "1", parent: "0", label: "批任务1" },
+          { id: "2", parent: "0", label: "批任务2" },
+          { id: "3", parent: "1", label: "批任务3" },
+          { id: "4", parent: "1", label: "批任务4" },
+          { id: "5", parent: "1", label: "批任务5" },
+          { id: "6", parent: "2", label: "批任务6" },
+          { id: "7", parent: "2", label: "批任务7" },
+          { id: "8", parent: "2", label: "批任务8" }
+        ],
+      };
+      rangeData.nodes.forEach(node => node.visible = false);
+
+
+      const graphData = {
+        nodes: baseData.nodes.concat(rangeData.nodes),
+        edges: baseData.edges
+      }
+
+      /** ====== custom a node type ======= */
+      G6.registerNode('customNode',
+        {
+          draw(cfg, group) {
+            group.shapeMap = {};
+            const rect = group.addShape('circle', {
+              attrs: {
+                x: 0,
+                y: 0,
+                r: 50,
+                fillOpacity: 1,
+                radius: 12,
+                stroke: 'rgba(0,0,0,0.2)',
+                lineWidth: 1,
+                fill: '#fff',
+              },
+              // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
+              name: 'rect-intention',
+            });
+            // title
+            group.addShape('text', {
+              attrs: {
+                x: 0,
+                y: -10,
+                text: cfg.title,
+                fontSize: 14,
+                fill: '#000',
+                fontWeight: 'bold',
+                textAlign: 'center'
+              },
+              // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
+              name: 'rect-title',
+            });
+            // time
+            group.addShape('text', {
+              attrs: {
+                x: 0,
+                y: 20,
+                text: cfg.time,
+                fontSize: 14,
+                fill: '#999',
+                textAlign: 'center'
+              },
+              // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
+              name: 'rect-time',
+            });
+            if (cfg.expandRange) {
+              // expand button
+              group.addShape('rect', {
+                attrs: {
+                  x: -32.5,
+                  y: 35,
+                  width: 65,
+                  height: 20,
+                  radius: 8,
+                  stroke: '#8CC2FC',
+                  lineWidth: 1,
+                  fill: '#FFF',
+                },
+                // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
+                name: 'rectBtn',
+              });
+              // button text
+              const expandShape = group.addShape('text', {
+                attrs: {
+                  x: 0,
+                  y: 51,
+                  text: cfg.show ? '-收起' : '+展开',
+                  fill: '#8CC2FC',
+                  fontSize: 12,
+                  textAlign: 'center'
+                },
+                capture: false,
+                // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
+                name: 'rectBtn-text',
+              });
+              group.shapeMap['rectBtn-text'] = expandShape;
+            }
+
+            const expandShape = group.addShape('polygon', {
+              attrs: {
+                points: [
+                  [30, 60],
+                  [-30, 60],
+                  [cfg.startPosition, 200],
+                  [cfg.endPosition, 200],
+                ],
+                fill: 'l(90) 0:rgba(140,194,252,0.28)  1:rgba(140,194,252,0.02)',
+                opacity: 0.5
+              },
+              visible: false,
+              // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
+              name: 'polygon-shape',
+            });
+            expandShape.toBack();
+            group.shapeMap['polygon-shape'] = expandShape;
+
+            return rect;
+          },
+          update: (cfg, item) => {
+            const group = item.getContainer();
+            const expandText = group.shapeMap?.['rectBtn-text'] || group.find(e => e.get('name') === 'rectBtn-text');
+            expandText.attr({
+              text: cfg.show ? '-收起' : '+展开'
+            });
+            const expandShape = group.shapeMap?.['polygon-shape'] || group.find(e => e.get('name') === 'polygon-shape');
+            if (cfg.show) {
+              expandShape.set('visible', true);
+              expandShape.attr({
+                points: [
+                  [30, 60],
+                  [-30, 60],
+                  [cfg.startPosition, 200],
+                  [cfg.endPosition, 200],
+                ],
+                opacity: 0,
+              });
+              expandShape.animate({ opacity: 1 }, { duration: 300, repeat: false });
+            } else {
+              expandShape.set('visible', false);
+              expandShape.animate({ opacity: 0 }, { duration: 300, repeat: false });
+            }
+          }
+        },
+        'single-node'
+      );
+
+
+      /** ====== init the graph ======= */
+      const graph = new G6.Graph({
+        container: 'container',
+        width,
+        height,
+        modes: {
+          default: ['drag-canvas']
+        },
+        defaultNode: {
+          type: 'circle',
+          style: {
+            r: 30,
+            fill: '#fff',
+            stroke: '#ccc',
+            lineWidth: 1,
+          },
+        },
+        defaultEdge: {
+          style: {
+            color: "#fff",
+            endArrow: true,
+            // stroke: "#FF6107",
+            stroke: "#8CC2FC",
+            lineWidth: 3,
+            opacity: 0.6
+          }
+        }
+      });
+      graph.read(graphData);
+
+
+      /** ====== bind listener ======= */
+      graph.on('rectBtn:click', (e) => {
+        const model = e.item.getModel();
+        const { expandRange } = model;
+        if (expandRange) {
+          showRoute(model);
+        }
+      });
+      const showRoute = (nodeData) => {
+        nodeData.show = !nodeData.show;
+
+        let { nodes, edges } = graphData;
+        const routeNodes = [];
+        const routeEdges = [];
+        const routeNodesMap = {};
+
+        // the nodes will be shown in the second layer
+        let showRangeIds = new Set();
+        baseData.nodes.forEach(node => {
+          if (!node.show) return;
+          const { expandRange } = node;
+          const [start, end] = expandRange;
+          for (let i = +start; i < +end + 1; i++) {
+            showRangeIds.add({id: i, start: +start});
+          }
+        });
+        showRangeIds = Array.from(showRangeIds);
+        showRangeIds.sort((a, b) => a.id - b.id);
+
+        const rangeLayoutNodes = [];
+        rangeData.nodes.forEach(node => {
+          // const showIdx = showRangeIds.indexOf(+node.id);
+          const showIdx = showRangeIds.findIndex(item => item.id === +node.id);
+          if (showIdx > -1) {
+            graph.showItem(node.id);
+            rangeLayoutNodes.push(node);
+          }
+          else graph.hideItem(node.id);
+        });
+
+        // layout for the second row nodes
+        const rangeGridLayout = new G6.Layout['grid']({
+          rows: 1,
+          width: 1000,
+          begin: [0, 200]
+        });
+        rangeGridLayout.init({ nodes: rangeLayoutNodes, edges: [] });
+        rangeGridLayout.execute();
+        rangeLayoutNodes.forEach(node => graph.update(node.id, { x: node.x, y: node.y }))
+
+        // update the 'show', 'startPosition', and 'endPosition' for first layer node
+        baseData.nodes.forEach((node) => {
+          const { id: nodeId, expandRange, x } = node;
+          if (!node.show) {
+            graph.updateItem(nodeId, { show: false });
+            return;
+          }
+          const [start, end] = expandRange;
+          graph.updateItem(nodeId, {
+            show: true,
+            // the position for the bottom vertexes of the range polygon
+            startPosition: graph.findById(`${start}`).getModel().x - 30 - x,
+            endPosition: graph.findById(`${end}`).getModel().x + 30 - x,
+          });
+        });
+
+        // remove the blue range edges
+        graph.getEdges().forEach(edge => {
+          if (edge.getModel().tag === 'range') graph.removeItem(edge);
+        });
+
+        // add new blue range edges
+        showRangeIds.forEach((item, i) => {
+          if (item.id === item.start) return; // 此处过滤不同组的节点之间的边
+          
+          graph.addItem('edge', {
+            id: `edge-${Math.random()}`,
+            source: `${showRangeIds[i - 1].id}`,
+            target: `${item.id}`,
+            tag: 'range',
+            style: {
+              lineWidth: 2,
+              stroke: '#8CC2FC'
+            }
+          })
+        })
+      }
+
+      if (typeof window !== 'undefined')
+        window.onresize = () => {
+          if (!graph || graph.get('destroyed')) return;
+          if (!container || !container.scrollWidth || !container.scrollHeight) return;
+          graph.changeSize(container.scrollWidth, container.scrollHeight);
+        };
+    </script>
+  </body>
+</html>

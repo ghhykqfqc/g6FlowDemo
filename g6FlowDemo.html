@@ -18,10 +18,10 @@
       // the first layer nodes
       const baseData = {
         nodes: [
-          { id: "intention1", time: "2023/12/20", title: "任务组1ID", expandRange: [0, 1], show: false, startPosition: 0, endPosition: 0 },
-          { id: "intention2", time: "2023/12/21", title: "任务组2ID", expandRange: [2, 3], show: false, startPosition: 0, endPosition: 0 },
-          { id: "intention3", time: "2023/12/22", title: "任务组3ID", expandRange: [4, 5], show: false, startPosition: 0, endPosition: 0 },
-          { id: "intention4", time: "2023/12/23", title: "任务组4ID", expandRange: [6, 8], show: false, startPosition: 0, endPosition: 0 },
+          { id: "intention1", time: "2023/12/20", title: "任务组1ID", expandRange: [0, 1], show: false, startX: 0, endX: 0, mediumY: 0 },
+          { id: "intention2", time: "2023/12/21", title: "任务组2ID", expandRange: [2, 3], show: false, startX: 0, endX: 0, mediumY: 0 },
+          { id: "intention3", time: "2023/12/22", title: "任务组3ID", expandRange: [4, 5], show: false, startX: 0, endX: 0, mediumY: 0 },
+          { id: "intention4", time: "2023/12/23", title: "任务组4ID", expandRange: [6, 8], show: false, startX: 0, endX: 0, mediumY: 0 },
         ],
         edges: [
           { id: "edge1", source: "intention1", target: "intention2" },
@@ -34,13 +34,27 @@
         node.type = 'customNode';
       });
       // layout for the first layer nodes
-      const gridLayout = new G6.Layout['grid']({
-        rows: 2,
-        width,
-        sortBy: 'id'
+      // const gridLayout = new G6.Layout['grid']({
+      //   rows: 2,
+      //   width,
+      //   sortBy: 'id'
+      // });
+      // gridLayout.init(baseData);
+      // gridLayout.execute()
+      const dagreLayout = new G6.Layout['dagre']({
+        type: 'dagre',
+        // nodesepFunc: (d) => {
+        //   if (d.id === '3') {
+        //     return 200;
+        //   }
+        //   return 50;
+        // },
+        ranksep: 70,
+        controlPoints: true,
+        rankdir: 'LR', // 从左到右布局
       });
-      gridLayout.init(baseData);
-      gridLayout.execute()
+      dagreLayout.init(baseData);
+      dagreLayout.execute()
 
       // the second layer nodes
       const rangeData = {
@@ -148,8 +162,8 @@
                 points: [
                   [30, 60],
                   [-30, 60],
-                  [cfg.startPosition, 200],
-                  [cfg.endPosition, 200],
+                  [cfg.startX, cfg.mediumY - 30],
+                  [cfg.endX, cfg.mediumY - 30],
                 ],
                 fill: 'l(90) 0:rgba(140,194,252,0.28)  1:rgba(140,194,252,0.02)',
                 opacity: 0.5
@@ -176,8 +190,8 @@
                 points: [
                   [30, 60],
                   [-30, 60],
-                  [cfg.startPosition, 200],
-                  [cfg.endPosition, 200],
+                  [cfg.startX, cfg.mediumY - 30],
+                  [cfg.endX, cfg.mediumY - 30],
                 ],
                 opacity: 0,
               });
@@ -273,19 +287,21 @@
         rangeGridLayout.execute();
         rangeLayoutNodes.forEach(node => graph.update(node.id, { x: node.x, y: node.y }))
 
-        // update the 'show', 'startPosition', and 'endPosition' for first layer node
+        // update the 'show', 'startX', and 'endX' for first layer node
         baseData.nodes.forEach((node) => {
-          const { id: nodeId, expandRange, x } = node;
+          const { id: nodeId, expandRange, x, y } = node;
           if (!node.show) {
             graph.updateItem(nodeId, { show: false });
             return;
           }
           const [start, end] = expandRange;
+          console.log('graph.findById(`${start}`).getModel()-------->',graph.findById(`${start}`).getModel())
           graph.updateItem(nodeId, {
             show: true,
             // the position for the bottom vertexes of the range polygon
-            startPosition: graph.findById(`${start}`).getModel().x - 30 - x,
-            endPosition: graph.findById(`${end}`).getModel().x + 30 - x,
+            startX: graph.findById(`${start}`).getModel().x - 30 - x,
+            endX: graph.findById(`${end}`).getModel().x + 30 - x,
+            mediumY: graph.findById(`${start}`).getModel().y - y
           });
         });
 

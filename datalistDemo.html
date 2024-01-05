@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* 通用样式 */
+    input[list] {
+      width: 200px;
+    }
+
+    /* 适配不同浏览器的样式 */
+    input::-webkit-calendar-picker-indicator {
+      background-color: transparent;
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 20px;
+    }
+
+    datalist {
+      position: absolute;
+      width: 180px;
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      z-index: 1;
+      -webkit-appearance: none; /* for Chrome */
+    }
+
+    /* 兼容Firefox浏览器 */
+    @-moz-document url-prefix() {
+      datalist {
+        width: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <input list="browsers" />
+  <datalist id="browsers">
+    <option value="Chrome">
+    <option value="Firefox">
+    <option value="Safari">
+    <option value="Opera">
+    <option value="Edge">
+  </datalist>
+</body>
+</html>

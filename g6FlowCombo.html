@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>G6 Flow Demo</title>
+  </head>
+  <body>
+    <div id="container"></div>
+
+    <script src="./g6.min.js"></script>
+    <script src="./jquery-3.7.1.min.js"></script>
+
+    <script>
+      const data = {
+        nodes: [
+          {
+            id: "node1",
+            x: 250,
+            y: 150,
+            r: 30,
+            label: "任务1",
+            comboId: "combo1",
+          },
+          {
+            id: "node2",
+            x: 350,
+            y: 150,
+            r: 30,
+            label: "任务2",
+            comboId: "combo1",
+          },
+          {
+            id: "node3",
+            x: 250,
+            y: 150,
+            r: 30,
+            label: "任务3",
+            comboId: "combo1",
+          },
+          {
+            id: "node4",
+            x: 350,
+            y: 150,
+            r: 30,
+            label: "任务4",
+            comboId: "combo1",
+          },
+          {
+            id: "node5",
+            x: 250,
+            y: 300,
+            r: 30,
+            label: "任务5",
+            comboId: "combo2",
+          },
+          {
+            id: "node6",
+            x: 450,
+            y: 300,
+            r: 30,
+            label: "任务6",
+            comboId: "combo2",
+          },
+        ],
+        edges: [
+          { id: "edge1", source: "node1", target: "node2" },
+          { id: "edge2", source: "node1", target: "node3" },
+          { id: "edge3", source: "node2", target: "node4" },
+          { id: "edge4", source: "node3", target: "node4" },
+          { id: "edge5", source: "node5", target: "node6" },
+        ],
+        combos: [
+          {
+            id: "combo1",
+            padding: 20,
+            label: "组1",
+          },
+          {
+            id: "combo2",
+            padding: 20,
+            label: "组2",
+            collapsed: false,
+          },
+        ],
+      };
+
+    //   data.nodes.forEach((node) => {
+    //     switch (node.ComboId) {
+    //       case "A":
+    //         node.style = {
+    //           fill: "#C4E3B2",
+    //           stroke: "#aaa",
+    //         };
+    //         break;
+    //       case "B":
+    //         node.style = {
+    //           fill: "#99C0ED",
+    //           stroke: "#aaa",
+    //         };
+    //         break;
+    //       case "C":
+    //         node.style = {
+    //           fill: "#eee",
+    //           stroke: "#aaa",
+    //         };
+    //         break;
+    //       default:
+    //         node.style = {
+    //           fill: "#FDE1CE",
+    //           stroke: "#aaa",
+    //         };
+    //         break;
+    //     }
+    //   });
+
+      const width = document.getElementById("container").scrollWidth;
+      const height = document.getElementById("container").scrollHeight || 500;
+      const graph = new G6.Graph({
+        container: "container",
+        width,
+        height,
+        // translate the graph to align the canvas's center, support by v3.5.1
+        fitCenter: true,
+        // Set groupByTypes to false to get rendering result with reasonable visual zIndex for combos
+        groupByTypes: false,
+        modes: {
+          default: [
+            "drag-canvas",
+            "drag-node",
+            "drag-combo",
+            "collapse-expand-combo",
+          ],
+        },
+        // layout: {
+        //   type: 'comboForce',
+        //   // linkDistance: 80, // 普通节点之间的间距
+        //   preventOverlapPadding: 30, // 防止重叠的间距
+        //   maxIterations: 500, // 最大迭代次数
+        //   nodeSpacing: 20, // 根据节点的 level（层级）来动态设置节点间的间距
+        //   // collapseOrder: 'breadth' // 在收缩 combo 时的节点排列顺序
+        // },
+        layout: {
+            type: 'dagre',
+            sortByCombo: false,
+            ranksep: 20,
+            nodesep: 20,
+            rankdir: 'LR', // 从左到右布局
+        },
+        defaultNode: {
+          type: "circle",
+          style: {
+            r: 30,
+            fill: "#fff",
+            stroke: "#5B8FF9",
+            lineWidth: 1,
+          },
+        },
+        defaultEdge: {
+          style: {
+            color: "#fff",
+            endArrow: true,
+            // stroke: "#FF6107",
+            stroke: "#8CC2FC",
+            lineWidth: 1,
+            opacity: 0.6,
+          },
+        },
+        defaultCombo: {
+          type: "rect",
+          /* The minimum size of the combo. combo 最小大小 */
+          size: [20, 20],
+          /* style for the keyShape */
+          style: {
+            x: 0,
+            y: 0,
+            lineWidth: 1,
+            cursor: 'pointer',
+          },
+          labelCfg: {
+            /* label's offset to the keyShape */
+            // refY: 10,
+            /* label's position, options: center, top, bottom, left, right */
+            position: "top",
+            /* label's style */
+            // style: {
+            //   fontSize: 18,
+            // },
+          },
+          x: 100,
+          y: 100,
+        },
+        /* styles for different states, there are built-in styles for states: active, inactive, selected, highlight, disable */
+        /* you can extend it or override it as you want */
+        // comboStateStyles: {
+        //   active: {
+        //     fill: '#f00',
+        //     opacity: 0.5
+        //   },
+        // },
+      });
+
+      graph.data(data);
+      graph.render();
+
+      graph.on("combo:mouseenter", (evt) => {
+        const { item } = evt;
+        graph.setItemState(item, "active", true);
+      });
+
+      graph.on("combo:mouseleave", (evt) => {
+        const { item } = evt;
+        graph.setItemState(item, "active", false);
+      });
+      graph.on("combo:click", (evt) => {
+        const { item } = evt;
+        graph.setItemState(item, "selected", true);
+      });
+      graph.on("canvas:click", (evt) => {
+        graph.getCombos().forEach((combo) => {
+          graph.clearItemStates(combo);
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JqueryUI Tabs</title>
+  <script type="text/javascript" charset="utf8" src="./jquery-3.7.1.min.js"></script>
+  <link rel="stylesheet" href="./jquery-ui.min.css">  
+  <script src="./jquery-ui.min.js"></script>
+  <style>
+    .ui-tabs-panel {
+        height: calc(-100px + 100vh);
+        background: aliceblue !important;
+    }
+  </style>
+</head>
+<body>
+    <div id="tabs">
+        <ul>
+            <li><a href="#tabs-1">标签1</a></li>
+            <li><a href="#tabs-2">标签2</a></li>
+            <li><a href="#tabs-3">标签3</a></li>
+        </ul>
+        <div id="tabs-1">
+            <p>内容1</p>
+        </div>
+        <div id="tabs-2">
+            <p>内容2</p>
+        </div>
+        <div id="tabs-3">
+            <p>内容3</p>
+        </div>
+    </div>
+  <script>
+    $(document).ready(function () {
+        $("#tabs").tabs();
+    });
+  </script>
+</body>
+</html>

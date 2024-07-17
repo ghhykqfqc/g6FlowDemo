@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Low-Code Platform</title>
+  <link rel="stylesheet" href="./setFlow.css">
+  <script src="./g6.min.js"></script>
+  <script src="./jquery-3.7.1.min.js"></script>
+  <script src="./jquery-ui.min.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <div class="layout-left">
+      <div class="material-title-group">group元素</div>
+      <div id="groupMaterial"></div>
+      <div class="material-title-task">task元素</div>
+      <div id="taskMaterial"></div>
+    </div>
+    <div id="workspace">
+      <div class="group-workspace">
+        <div>groups编排(拖拽左侧组节点至该区域，并可在右侧进行属性配置)</div>
+        <div id="groupCanvas"></div>
+      </div>
+      <div class="canvas-gap">
+        <div class="gap-line"></div>
+        <div class="gap-text">拖拽编排区域画布分隔</div>
+        <div class="gap-line"></div>
+      </div>
+      <div class="task-workspace">
+        <div id="taskCanvasTitle"></div>
+        <div id="taskCanvas"></div>
+      </div>
+    </div>
+    <div class="layout-right">
+      <div class="group-properties-box">
+        <div>当前group配置信息</div>
+        <div id="groupProperties"></div>
+      </div>
+      <div class="task-properties-box">
+        <div>当前task配置信息</div>
+        <div id="taskProperties"></div>
+      </div>
+      
+      <div class="btn-box">
+        <button class="btn-save">保存</button>
+        <button class="btn-back">取消</button>
+      </div>
+    </div>
+  </div>
+  
+
+  <script>
+    $(function() {
+      const groups = [{
+        flowId: 'flowbs',
+        groupId: 'group1',
+        groupDesc: 'groupName'
+      },{
+        flowId: 'flowbs',
+        groupId: 'group2',
+        groupDesc: 'groupName'
+      },{
+        flowId: 'flowbs',
+        groupId: 'group3',
+        groupDesc: 'groupName'
+      },{
+        flowId: 'flowbs',
+        groupId: 'group4',
+        groupDesc: 'groupName'
+      }];
+
+      const tasks = [{
+        flowId: 'flowbs',
+        groupId: 'group1',
+        taskId: 'task1',
+        groupDesc: 'groupName'
+      },{
+        flowId: 'flowbs',
+        groupId: 'group1',
+        taskId: 'task2',
+        groupDesc: 'groupName'
+      },{
+        flowId: 'flowbs',
+        groupId: 'group2',
+        taskId: 'task3',
+        groupDesc: 'groupName'
+      },{
+        flowId: 'flowbs',
+        groupId: 'group2',
+        taskId: 'task4',
+        groupDesc: 'groupName'
+      }]
+
+      // 创建已有物料
+      const groupHtml = groups.map((item, index) => { // 根据已有组列表创建组物料元素
+        return `<div class="item" data-index="${index}" data-type="rect">${item.groupId}</div>`;
+      }).join('');
+
+      const taskHtml = tasks.map((item, index) => { // 根据已有任务列表创建任务物料元素
+        return `<div class="item" data-index="${index}" data-type="circle">${item.taskId}</div>`;
+      }).join('');
+
+      $('#groupMaterial').html(groupHtml);
+      $('#taskMaterial').html(taskHtml);
+
+      // workspace的宽高
+      const width = $('#workspace')[0].clientWidth
+      const height = $('#workspace')[0].clientHeight
+
+      const fixSelectedItems = {
+        fixAll: true,
+        fixState: 'myState', // 'selected' by default
+      };
+
+      // 创建 G6 实例
+      const groupGraph = createGraph('group')
+      // var taskGraph = createGraph('task')
+      var taskGraphList = []
+      var currentTaskGraph = null
+
+      
+
+      // 根据当前的结点类型和在属性列表中的索引去获取该结点的配置信息
+      function getCurrentProperties(type, index) {
+        if(type === 'rect') { // group结点
+          return groups[index]
+        } else { // task结点
+          return tasks[index]
+        }
+      }
+      
+      // 根据name('group'或'task')创建 G6 实例
+      function createGraph(name) {
+        return new G6.Graph({
+          container: name + 'Canvas',
+          width: width,
+          height: height/2 - 40,
+          modes: {
+            default: [
+              'drag-canvas',
+              'drag-node',
+              {
+                type: 'zoom-canvas',
+                fixSelectedItems,
+              },
+              {
+                type: 'tooltip',
+                formatText(model) {
+                  const html = name === 'group' ? `
+                    <div>
+                      <div><span class='tip-label'>流水号: </span><span class='tip-value'>${model.properties['flowId']}</span></div>
+                      <div><span class='tip-label'>组Id: </span><span class='tip-value'>${model.properties['groupId']}</span></div>
+                      <div><span class='tip-label'>组名称: </span><span class='tip-value'>${model.properties['groupDesc']}</span></div>
+                    </div>
+                  ` : `
+                    <div>
+                      <div><span class='tip-label'>流水号: </span><span class='tip-value'>${model.properties['flowId']}</span></div>
+                      <div><span class='tip-label'>所属组Id: </span><span class='tip-value'>${model.properties['taskId']}</span></div>
+                      <div><span class='tip-label'>任务Id: </span><span class='tip-value'>${model.properties['groupId']}</span></div>
+                      <div><span class='tip-label'>组名称: </span><span class='tip-value'>${model.properties['groupDesc']}</span></div>
+                    </div>
+                  `;
+                  return html;
+                },
+                offset: 0,
+              },
+              // 只有当 'shift' 键被按下，才能够通过从一个节点拖拽到另一个节点来创建一条边
+              {
+                type: 'create-edge',
+                trigger: 'click',
+                key: 'shift',
+                edgeConfig: {
+                  type: 'polyline',
+                  style: {
+                    stroke: '#444',
+                    lineWidth: 2,
+                    endArrow: true,
+                    opacity: 0.6,
+                  },
+                },
+                // 是否允许开始创建边
+                shouldBegin: (e, self) => {
+                  // 禁止创建自环边
+                  if (e.item) {
+                    startNodeId = e.item._cfg.id
+                    return true;
+                  }
+                  return true;
+                },
+                // 是否允许结束创建边
+                shouldEnd: (e, self) => {
+                  // 获取当前拖拽结束的节点ID
+                  const endNodeId = e.item._cfg.id;
+                  // 获取当前图中的所有边
+                  const graph = name === 'task' ? currentTaskGraph : groupGraph
+                  const edges = graph.getEdges();
+                  // 遍历所有边，检查是否已经存在与结束节点相连的边
+                  for (let i = 0; i < edges.length; i++) {
+                    const edge = edges[i].getModel();
+                    if (edge.source === startNodeId && edge.target === endNodeId) {
+                      // 如果已经存在与结束节点相连的边，则禁止创建重复边
+                      return false;
+                    }
+                  }
+                  // 当边的起止结点id一致 禁止创建自环边
+                  if (!!e.item && e.item._cfg.id === startNodeId) {
+                    return false;
+                  }
+                  return true;
+                }
+              },
+            ],
+          },
+        });
+      }
+
+      function hideCurrentTaskGraph() { // 判断当前currentTaskGraph是否存在，存在则隐藏
+        if(currentTaskGraph) {
+          currentTaskGraph.get('canvas').get('el').style.display = 'none';
+        }
+      }
+
+      // 在画布中创建当前拖拽的节点
+      function createNodeOnCanvas(type, index, x, y) {
+        const properties = getCurrentProperties(type, index)
+        const isGroup = type === 'rect'
+        // const graph = isGroup ? groupGraph : taskGraphList[index]
+        let graph = null
+        const nodeType = isGroup ? 'group' : 'task'
+        const labelKey = nodeType + 'Id'
+
+        // 组节点创建或更改时 让task相关区域显示
+        if(isGroup && !taskGraphList[index]) {
+          const groupId = properties['groupId']
+          hideCurrentTaskGraph(); // 判断当前currentTaskGraph是否存在，存在则隐藏
+          currentTaskGraph = createGraph('task');
+          taskGraphList[index] = {
+            groupId: groupId,
+            graph: currentTaskGraph
+          }; // 将当前taskGraph存入数组 表示该组内的taskGraph
+          graph = groupGraph;
+          // 设置taskCanvas标题文本内容为groupId前缀 以表示某个组内任务的编排
+          $('#taskCanvasTitle').text(`${groupId}组内的tasks编排(拖拽左侧任务节点至该区域，并可在右侧进行属性配置)`);
+          $('.canvas-gap').css('display', 'flex');
+          $('.material-title-task,#taskMaterial,.task-workspace,.task-properties-box').show();
+          // 选中任务节点后显示其属性
+          currentTaskGraph?.on('node:click', function(ev) {
+            const node = ev.item;
+            showProperties(node, 'task');
+          });
+        } else if(!isGroup && currentTaskGraph) {
+          graph = currentTaskGraph;
+        }
+
+        // 创建 G6 节点
+        const node = graph.addItem('node', {
+          type: type,
+          x: x,
+          y: y,
+          label: properties[labelKey],
+          style: {
+            r: type === 'circle' ? 30:'',
+            fill: "#efefef",
+            stroke: "#444",
+            lineWidth: 1,
+            cursor: 'pointer',
+          },
+          properties: properties
+        });
+
+        // 显示控件属性
+        showProperties(node, nodeType);
+      }
+
+
+      // 从工具栏中拖拽控件到工作空间
+      $('#groupMaterial .item,#taskMaterial .item').draggable({
+        helper: 'clone',
+        appendTo: 'parent',
+        start: function(event, ui) {
+          $(this).addClass('dragging');
+        },
+        stop: function(event, ui) {
+          // 获取控件类型
+          const type = $(this).data('type');
+          let y = 0;
+
+          if(type === 'rect' && ui.position.top < (height/2 - 10)) { // 如果拖拽的是组节点且在相应画布区域内
+            y = ui.position.top
+          } else if(type === 'circle' && ui.position.top > (height/2 + 25) && ui.position.top < (height - 60)) {// 如果拖拽的是任务节点且在相应画布区域内
+            y = ui.position.top - height/2
+          } else { // 其他情况主要针对: 不在对应画布区域内
+            $(this).removeClass('dragging'); // 清除物料区当前拖拽结点的样式
+            return
+          }
+          const index = $(this).data('index');
+          let x = ui.position.left
+          createNodeOnCanvas(type, index, x, y); // 在画布中创建当前拖拽的结点
+          
+          $(this).removeClass('dragging');
+        }
+      });
+
+      // 选中组结点后显示其属性
+      groupGraph.on('node:click', function(ev) {
+        const node = ev.item;
+        const groupId = node.getModel().properties['groupId']
+        hideCurrentTaskGraph(); // 判断当前currentTaskGraph是否存在，存在则隐藏
+        const currentItem = currentTaskGraph = taskGraphList.find(function(item) { // 选出当前点击的group所匹配的taskGraph
+          return item.groupId === groupId;
+        });
+        currentTaskGraph = currentItem.graph
+        if(currentTaskGraph) {
+          currentTaskGraph.get('canvas').get('el').style.display = 'block';
+        }
+        showProperties(node, 'group');
+      });
+
+
+      // 显示控件属性
+      function showProperties(node, nodeType) {
+        const properties = node.getModel().properties; // 获取控件属性
+        const isGroup = nodeType === 'group' // 是否为组节点
+
+        // 清空属性面板
+        $('#groupProperties, #taskProperties').empty();
+
+        // 遍历控件属性
+        for (const key in properties) {
+          // 创建属性行
+          const row = $('<div class="property-row"></div>');
+
+          // 创建属性名称列
+          const propertyName = $('<div class="property-name"></div>').text(key+':');
+
+          // 创建属性值列
+          const propertyValue = $(`<input type="text" data-key="${key}" class="property-value" />`);
+          // 给输入框添加更改事件
+          propertyValue.on('change', function() {
+            const newValue = $(this).val();
+            const key = $(this).data('key');
+            const graph = isGroup ? groupGraph : currentTaskGraph
+            const labelKey = isGroup ? 'groupId' : 'taskId'
+            properties[key] = newValue
+
+            // 更改图中结点配置包括label展示
+            graph.updateItem(node, {
+              label: properties[labelKey],
+              properties: properties
+            });
+          });
+
+          // 如果属性值是对象，则将其转换为字符串
+          if (typeof properties[key] === 'object') {
+            propertyValue.val(JSON.stringify(properties[key]));
+          } else {
+            propertyValue.val(properties[key]);
+          }
+
+          // 将属性名称列和属性值列添加到属性行
+          row.append(propertyName);
+          row.append(propertyValue);
+
+          // 将属性行添加到属性面板
+          $(isGroup ? '#groupProperties' : '#taskProperties').append(row);
+        }
+      }
+
+      // 保存上传图对象的具体内容包括结点和边
+      function uploadGraphInfo(graph) {
+        const nodes = graph.getNodes(); // 获取所有结点
+        const edges = graph.getEdges(); // 获取所有边
+        console.log('nodes-------->', nodes)
+        console.log('edges-------->', edges)
+      }
+
+      // 保存编排 对组和组内任务分别判断是否存在，存在则保存上传
+      function saveGraph() {
+        if(!!groupGraph) { // 组编排存在
+          uploadGraphInfo(groupGraph);
+        }
+        if (!!currentTaskGraph) { // 组内任务编排存在
+          uploadGraphInfo(currentTaskGraph);
+        }
+      }
+
+      // 保存
+      $('.btn-save').on('click', function () {
+        saveGraph(); // 保存编排
+      })
+
+      // 返回
+      $('.btn-back').on('click', function () {
+        console.log('btn-back-------->', 111)
+      })
+    });
+  </script>
+</body>
+</html>

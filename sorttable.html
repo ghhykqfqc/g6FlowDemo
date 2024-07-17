@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Draggable DataTable</title>
+  <link rel="stylesheet" type="text/css" href="./jquery.dataTables.min.css">
+  <script type="text/javascript" charset="utf8" src="./jquery-3.7.1.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="./jquery.dataTables.min.js"></script>
+  <link rel="stylesheet" href="./jquery-ui.min.css">  
+  <script src="./jquery-ui.min.js"></script>
+  <style>
+    table.dataTable tbody {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <table id="example" class="display">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Country</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-id="1">
+        <td>John Doe</td>
+        <td>30</td>
+        <td>USA</td>
+      </tr>
+      <tr data-id="2">
+        <td>Jane Smith</td>
+        <td>25</td>
+        <td>Canada</td>
+      </tr>
+      <tr data-id="3">
+        <td>Jack Lucy</td>
+        <td>26</td>
+        <td>America</td>
+      </tr>
+      <!-- 更多表格行... -->
+    </tbody>
+  </table>
+  <button id="deleteSelectedBtn">删除</button>
+  <script>
+    $(document).ready(function () {
+      var table = $('#example').dataTable({
+        select: {
+          style: 'multi',
+          selector: 'td'
+        },
+      });
+
+      $('#example tbody').sortable({
+        helper: fixWidthHelper, // 修复拖动时宽度变化的问题
+        stop: updateFields // 拖动停止时更新行的字段值
+      }).disableSelection();
+
+      function fixWidthHelper(e, ui) {
+        ui.children().each(function() {
+          $(this).width($(this).width());
+        });
+        return ui;
+      }
+      function updateFields(event, ui) {
+        // 获取排序后的行的顺序
+        var sortedIDs = $('#example tbody').sortable('toArray', { attribute: 'data-id' });
+
+        // 更新行的字段值
+        sortedIDs.forEach(function(id, index) {
+          var row = $('#' + id);
+          row.find('td:eq(0)').text('Row ' + (index + 1));
+        });
+      }
+      // 获取选中的行数据
+      $('#example').on('click', 'tbody tr', function () {
+        $(this).toggleClass('selected');
+      });
+
+      // 批量删除选中的行
+      $('#deleteSelectedBtn').on('click', function () {
+        table.rows('.selected').remove().draw();
+      });
+    });
+  </script>
+</body>
+</html>

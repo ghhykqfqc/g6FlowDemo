@@ -39,6 +39,7 @@
     <script src="./jquery-3.7.1.min.js"></script>
 
     <script>
+      const globalFontSize = 12;
       const data = {
         nodes: [
           {
@@ -53,7 +54,8 @@
           },
           {
             id: "group3",
-            label: "group3",
+            size:30,
+            label: "group311111111111111111111111111111111111111111111111",
             status: 3 // 已结束
           },
           {
@@ -71,6 +73,31 @@
             label: "group6",
             status: 0 // 未开始
           },
+          {
+            id: "group7",
+            label: "group7",
+            status: 0 // 未开始
+          },
+          {
+            id: "group8",
+            label: "group8",
+            status: 0 // 未开始
+          },
+          {
+            id: "group9",
+            label: "group9",
+            status: 0 // 未开始
+          },
+          {
+            id: "group10",
+            label: "group10",
+            status: 0 // 未开始
+          },
+          {
+            id: "group11",
+            label: "group11",
+            status: 0 // 未开始
+          },
         ],
         edges: [
           { id: "edge1", source: "group1", target: "group2" },
@@ -79,6 +106,10 @@
           { id: "edge4", source: "group3", target: "group4" },
           { id: "edge5", source: "group4", target: "group5" },
           { id: "edge6", source: "group5", target: "group6" },
+          { id: "edge7", source: "group6", target: "group7" },
+          { id: "edge8", source: "group7", target: "group8" },
+          { id: "edge9", source: "group8", target: "group9" },
+          { id: "edge10", source: "group9", target: "group10" },
         ]
       };
 
@@ -94,6 +125,43 @@
             return "未开始";
         }
       }
+      const subjectColors = [
+        '#eee',
+        '#99C0ED',
+        '#e03131',
+        '#C4E3B2',
+      ];
+      const backColor = '#fff';
+      const theme = 'default';
+      const disableColor = '#777';
+      const colorSets = G6.Util.getColorSetsBySubjectColors(
+        subjectColors,
+        backColor,
+        theme,
+        disableColor,
+      );
+      // 结点内文本超宽省略处理
+      const fittingString = (str, maxWidth, fontSize) => {
+        const ellipsis = '...';
+        const ellipsisLength = G6.Util.getTextSize(ellipsis, fontSize)[0];
+        let currentWidth = 0;
+        let res = str;
+        const pattern = new RegExp('[\u4E00-\u9FA5]+'); // distinguish the Chinese charactors and letters
+        str.split('').forEach((letter, i) => {
+          if (currentWidth > maxWidth - ellipsisLength) return;
+          if (pattern.test(letter)) {
+            // Chinese charactors
+            currentWidth += fontSize;
+          } else {
+            // get the width of single letter according to the fontSize
+            currentWidth += G6.Util.getLetterWidth(letter, fontSize);
+          }
+          if (currentWidth > maxWidth - ellipsisLength) {
+            res = `${str.substr(0, i)}${ellipsis}`;
+          }
+        });
+        return res;
+      };
 
       // 根据节点的状态state字段赋予节点和边不同颜色
       function updateNodesStyleByStatus(data) {
@@ -102,12 +170,14 @@
               case 1: // 进行中
                   node.style = {
                     fill: "#99C0ED",
-                    stroke: "#aaa",
+                    // stroke: "#aaa",
                   };
                   node.stateStyles = {
                     active: {
-                      fill: "#99C0ED",
-                      stroke: "#eee",
+                      // fill: "#99C0ED",
+                      // stroke: "#eee",
+                      fill: colorSets[1].mainFill,
+                      stroke: colorSets[1].activeStroke,
                     },
                     selected: {
                       fill: "#99C0ED",
@@ -118,12 +188,14 @@
               case 2: // 异常or中断
                   node.style = {
                     fill: "#e03131",
-                    stroke: "#aaa",
+                    // stroke: "#aaa",
                   };
                   node.stateStyles = {
                     active: {
-                      fill: "#e03131",
-                      stroke: "#eee",
+                      // fill: "#e03131",
+                      // stroke: "#eee",
+                      fill: colorSets[2].activeFill,
+                      stroke: colorSets[2].activeStroke,
                     },
                     selected: {
                       fill: "#e03131",
@@ -134,12 +206,14 @@
                 case 3: // 已结束
                 node.style = {
                   fill: "#C4E3B2",
-                  stroke: "#aaa",
+                  // stroke: "#aaa",
                 };
                 node.stateStyles = {
                   active: {
-                    fill: "#C4E3B2",
-                    stroke: "#eee",
+                    // fill: "#C4E3B2",
+                    // stroke: "#eee",
+                    fill: colorSets[3].activeFill,
+                    stroke: colorSets[3].activeStroke,
                   },
                   selected: {
                     fill: "#C4E3B2",
@@ -150,12 +224,14 @@
               default: // 未开始或者其他
                   node.style = {
                   fill: "#eee",
-                  stroke: "#aaa",
+                  // stroke: "#aaa",
                   };
                   node.stateStyles = {
                     active: {
-                      fill: "#eee",
-                      stroke: "#eee",
+                      // fill: "#eee",
+                      // stroke: "#eee",
+                      fill: colorSets[0].activeFill,
+                      stroke: colorSets[0].activeStroke,
                     },
                     selected: {
                       fill: "#eee",
@@ -194,7 +270,7 @@
                 const html = `
                   <div>
                     <div><span class='tip-label'>组Id: </span><span class='tip-value'>${model.id}</span></div>
-                    <div><span class='tip-label'>组名称: </span><span class='tip-value'>${model.label}</span></div>
+                    <div><span class='tip-label'>组名称: </span><span class='tip-value'>${model.sLabel}</span></div>
                     <div><span class='tip-label'>组状态: </span><span class='tip-value'>${getStatusByNumber(model.status)}</span></div>
                   </div>
                 `;
@@ -204,11 +280,33 @@
             }
           ],
         },
+        // layout: {
+        //   type: 'dagre',
+        //   ranksep: 16,
+        //   nodesep: 10,
+        //   rankdir: 'LR', // 从左到右布局
+        // },
         layout: {
-            type: 'dagre',
-            ranksep: 20,
-            nodesep: 20,
-            rankdir: 'LR', // 从左到右布局
+          type: 'force',
+          preventOverlap: true,
+          linkDistance: (d) => {
+            if (d.source.id === 'group1') {
+              return 100;
+            }
+            return 30;
+          },
+          nodeStrength: (d) => {
+            if (d.isLeaf) {
+              return -50;
+            }
+            return -10;
+          },
+          edgeStrength: (d) => {
+            if (d.source.id === 'group2' || d.source.id === 'group3' || d.source.id === 'group3') {
+              return 0.7;
+            }
+            return 0.1;
+          },
         },
         defaultNode: {
           type: "circle",
@@ -218,6 +316,11 @@
             stroke: "#aaa",
             lineWidth: 1,
             cursor: 'pointer',
+          },
+          labelCfg: {
+            style: {
+              fontSize: globalFontSize,
+            },
           },
         },
         defaultEdge: {
@@ -232,8 +335,41 @@
         }
       });
 
+      data.nodes.forEach(function (node) {
+        node.sLabel = node.label
+        node.label = fittingString(node.label, node.size, globalFontSize);
+      });
+      console.log('data.nodes-------->', data.nodes)
       graph.data(data);
       graph.render();
+      // 遍历所有节点，找出满足以下条件的节点：入度大于 1 且出度小于等于 1
+      const nodesToWrap = [];
+      graph.getNodes().forEach((node) => {
+        const inDegree = graph.getNeighbors(node, 'in').length;
+        const outDegree = graph.getNeighbors(node, 'out').length;
+        if (inDegree > 2) {
+          nodesToWrap.push(node);
+        }
+      });
+      console.log('nodesToWrap-------->', nodesToWrap)
+      // 将满足条件的节点之后的所有节点换行排列
+      nodesToWrap.forEach((node) => {
+        // const nextNodes = graph.findById(node._cfg.id.slice(-1));
+        console.log('graph.getNodes()-------->', graph.getNodes())
+        console.log('.slice(4)-------->','node10'.slice(4))
+        const nextNodes = graph.getNodes().filter((item) => item._cfg.id.slice(4) > node._cfg.id.slice(4))
+        nextNodes.forEach((nextNode) => {
+          console.log('nextNode-------->', nextNode)
+          const nodeModel = graph.findById(nextNode._cfg.id)._cfg.model;
+          console.log('nodeModel-------->', nodeModel)
+          nodeModel.x = 0, 
+          nodeModel.y = nodeModel.y + 80 ;
+          console.log('nodeModel-------->', nodeModel)
+        });
+      });
+
+      // graph.layout();
+      
 
       graph.on("node:mouseenter", (evt) => {
         const { item } = evt;
@@ -266,17 +402,20 @@
             nodes: [
             {
                 id: "node1",
+                size: 30,
                 label: "任务1",
                 status: 3 // 已结束
             },
             {
                 id: "node2",
+                size: 30,
                 label: "任务2",
                 status: 2 // 中断
             },
             {
                 id: "node3",
-                label: "任务3",
+                size: 30,
+                label: "任务3111111111111111111111111111111111111",
                 status: 3 // 已结束
             },
             {
@@ -346,7 +485,7 @@
                     const html = `
                       <div>
                         <div><span class='tip-label'>任务Id: </span><span class='tip-value'>${model.id}</span></div>
-                        <div><span class='tip-label'>任务名称: </span><span class='tip-value'>${model.label}</span></div>
+                        <div><span class='tip-label'>任务名称: </span><span class='tip-value'>${model.sLabel}</span></div>
                         <div><span class='tip-label'>任务状态: </span><span class='tip-value'>${getStatusByNumber(model.status)}</span></div>
                       </div>
                     `;
@@ -367,9 +506,15 @@
                 style: {
                     r: 30,
                     fill: "#fff",
-                    stroke: "#aaa",
+                    stroke: "#444",
+                    // stroke: "#aaa",
                     lineWidth: 1,
                     cursor: 'pointer',
+                },
+                labelCfg: {
+                  style: {
+                    fontSize: globalFontSize,
+                  },
                 },
             },
             defaultEdge: {
@@ -377,7 +522,8 @@
                     color: "#fff",
                     endArrow: true,
                     // stroke: "#FF6107",
-                    stroke: "#8CC2FC",
+                    // stroke: "#8CC2FC",
+                    stroke: "#444",
                     lineWidth: 1,
                     opacity: 0.6,
                 },
@@ -386,6 +532,10 @@
         let data1 = getDataByGroupID(groupId)
         updateNodesStyleByStatus(data1);
 
+        data1.nodes.forEach(function (node) {
+          node.sLabel = node.label
+          node.label = fittingString(node.label, node.size, globalFontSize);
+        });
         graph1.data(data1);
         graph1.render();
         graph1.on("node:mouseenter", (evt) => {

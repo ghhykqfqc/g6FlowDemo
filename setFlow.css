@@ -1,0 +1,166 @@
+/* 滚动条轨道 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: #F5F5F5;
+}
+
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #3c8dbc99;
+}
+
+/* 滚动条滑块悬停时 */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #3c8dbc;
+}
+
+/* 滚动条轨道悬停时 */
+::-webkit-scrollbar-track:hover {
+  background-color: #abc8df99;
+}
+body {
+  position: fixed;
+  /* margin: 0; */
+  padding: 0;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+/* 工具栏样式 */
+.layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+.material-title-group,.material-title-task {
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.layout-left {
+  min-width: 100px;
+  flex: 0.2;
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.g6-tooltip {
+  padding: 10px 6px;
+  color: #444;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #e2e2e2;
+  border-radius: 4px;
+}
+.tip-label{
+  display: inline-block;
+  text-align: end;
+  width: 70px;
+  margin-right: 10px;
+}
+
+#groupMaterial, #taskMaterial {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+
+#groupMaterial .item {
+  width: 60px;
+  padding: 5px;
+  margin-bottom: 5px;
+  border: 1px solid #444;
+  background-color: #efefef;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+#groupMaterial .item:hover,#taskMaterial .item:hover {
+  background-color: #ddd;
+}
+
+#groupMaterial .item.dragging,#taskMaterial .item.dragging {
+  opacity: 0.5;
+}
+
+#taskMaterial .item {
+  width: 50px;
+  height: 50px;
+  text-align: center;
+  line-height: 45px;
+  padding: 5px;
+  margin-bottom: 5px;
+  border: 1px solid #444;
+  border-radius: 50%;
+  background-color: #efefef;
+  cursor: pointer;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 工作空间样式 */
+#workspace {
+  flex: 2;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-left: 2px;
+}
+
+.canvas-gap {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0.6;
+}
+
+.gap-line {
+  width: 100%;
+  border-top: 1px dashed #aaa;
+}
+.gap-text {
+  white-space: nowrap;
+}
+/* 属性面板样式 */
+.layout-right {
+  flex: 1;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-left: 2px;
+}
+
+.group-properties-box, .task-properties-box {
+  margin-bottom: 10px;
+}
+
+/* 属性行样式 */
+.property-row {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+}
+
+/* 属性名称样式 */
+.property-name {
+  width: 100px;
+  font-weight: bold;
+}
+
+/* 属性值样式 */
+.property-value {
+  flex-grow: 1;
+}
+
+.btn-box {
+  display: flex;
+}
+
+.material-title-task,#taskMaterial,.canvas-gap,.task-workspace,.task-properties-box {
+  display: none;
+}
